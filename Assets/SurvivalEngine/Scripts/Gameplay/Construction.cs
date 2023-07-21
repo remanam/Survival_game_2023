@@ -28,7 +28,7 @@ namespace SurvivalEngine
         private UniqueID unique_id;
 
         public int current_stage = 1;
-        public int stage_length;
+        public int stage_count;
 
         [SerializeField]
         private GameObject[] construction_models_prefab; // 1 - stage one, 2 - stage two, ...
@@ -52,7 +52,7 @@ namespace SurvivalEngine
                 selectable.onDestroy += OnDeath;
             }
 
-            stage_length = data.stageCraftList.Length;
+            stage_count = data.stage_craft_list.Length;
         }
 
 
@@ -91,9 +91,9 @@ namespace SurvivalEngine
             }
         }
 
-        public Construction GetAllStageCraft()
+        public CraftData[] GetAllStageCraft()
         {
-            return this;
+            return data.stage_craft_list;
         }
 
         private void OnDeath()
@@ -111,6 +111,7 @@ namespace SurvivalEngine
 
         private void OnUse(PlayerCharacter playerCharacter)
         {
+            ConstructionPanel.Get().SetConstruction(this);
             ConstructionPanel.Get().Set(selectable, GetByUID(unique_id.unique_id));
         }
 

@@ -74,12 +74,50 @@ namespace SurvivalEngine
 
         //---- Crafting ----
 
+        //Can craft any recipe
         public bool CanCraft(CraftData item, bool skip_near = false)
         {
             if (item == null)
                 return false;
 
             CraftCostData cost = item.GetCraftCost();
+            bool can_craft = true;
+
+            Dictionary<GroupData, int> item_groups = new Dictionary<GroupData, int>(); //Add to groups so that fillers are not same than items
+
+            foreach (KeyValuePair<ItemData, int> pair in cost.craft_items)
+            {
+                AddCraftCostItemsGroups(item_groups, pair.Key, pair.Value);
+                if (!character.Inventory.HasItem(pair.Key, pair.Value))
+                    can_craft = false; //Dont have required items
+            }
+
+            foreach (KeyValuePair<GroupData, int> pair in cost.craft_fillers)
+            {
+                int value = pair.Value + CountCraftCostGroup(item_groups, pair.Key);
+                if (!character.Inventory.HasItemInGroup(pair.Key, value))
+                    can_craft = false; //Dont have required items
+            }
+
+            foreach (KeyValuePair<CraftData, int> pair in cost.craft_requirements)
+            {
+                if (CountRequirements(pair.Key) < pair.Value)
+                    can_craft = false; //Dont have required constructions
+            }
+
+            if (!skip_near && cost.craft_near != null && !character.IsNearGroup(cost.craft_near) && !character.EquipData.HasItemInGroup(cost.craft_near))
+                can_craft = false; //Not near required construction
+
+            return can_craft;
+        }
+
+        // can craft for consturctions stage (the same but uses construction data and STAGE of consturction)
+        public bool CanCraftStage(ConstructionData item, int current_stage, bool skip_near = false)
+        {
+            if (item == null)
+                return false;
+
+            CraftCostData cost = item.stage_craft_list[current_stage].GetCraftCost();
             bool can_craft = true;
 
             Dictionary<GroupData, int> item_groups = new Dictionary<GroupData, int>(); //Add to groups so that fillers are not same than items
@@ -122,37 +160,6 @@ namespace SurvivalEngine
             }
         }
 
-        // Now you can check every construction build stage
-        public bool CanCraft(ConstructionData item, int stage_number)
-        {
-            if (item == null)
-                return false;
-
-            bool can_craft = true;
-            CraftStageCostData cost = item.GetCraftStageCost(stage_number);
-
-            Dictionary<GroupData, int> item_groups = new Dictionary<GroupData, int>(); //Add to groups so that fillers are not same than items
-
-            foreach (KeyValuePair<ItemData, int> pair in cost.craft_stage_items)
-            {
-                AddCraftCostItemsGroups(item_groups, pair.Key, pair.Value);
-                if (!character.Inventory.HasItem(pair.Key, pair.Value))
-                    can_craft = false; //Dont have required items
-            }
-
-            return can_craft;
-        }
-
-        private void AddCraftStageCostItemsGroups(Dictionary<GroupData, int> item_groups, ItemData item, int quantity)
-        {
-            foreach (GroupData group in item.groups)
-            {
-                if (item_groups.ContainsKey(group))
-                    item_groups[group] += quantity;
-                else
-                    item_groups[group] = quantity;
-            }
-        }
 
         private int CountCraftCostGroup(Dictionary<GroupData, int> item_groups, GroupData group)
         {
@@ -174,10 +181,11 @@ namespace SurvivalEngine
             }
         }
 
+        // The same but for consturctions
         public void PayCraftingCost(ConstructionData item, int current_stage)
         {
-            CraftStageCostData cost = item.GetCraftStageCost(current_stage);
-            foreach (KeyValuePair<ItemData, int> pair in cost.craft_stage_items)
+            CraftCostData cost = item.stage_craft_list[current_stage - 1].GetCraftCost();
+            foreach (KeyValuePair<ItemData, int> pair in cost.craft_items)
             {
                 character.Inventory.UseItem(pair.Key, pair.Value);
             }
@@ -472,16 +480,15 @@ namespace SurvivalEngine
             return null;
         }
 
-        public void BuildStagedConstruction(ConstructionData construct, int current_stage, bool pay_craft_cost = true)
+        public void BuildConstructionStage(ConstructionData construct, int current_stage, bool pay_craft_cost = true)
         {
-            if (!pay_craft_cost || CanCraft(construct))
+            if (!pay_craft_cost || CanCraftStage(construct, current_stage))
             {
                 if (pay_craft_cost)
                     PayCraftingCost(construct);
 
                 Debug.Log("STAGE BUILD SUCCED!");
             }
-
 
         }
 

@@ -13,7 +13,7 @@ namespace SurvivalEngine
 
 
 
-    [System.Serializable]
+/*    [System.Serializable]
     public class CraftStageCostData
     {
         public Dictionary<ItemData, int> craft_stage_items = new Dictionary<ItemData, int>();
@@ -26,7 +26,7 @@ namespace SurvivalEngine
     public class StageCraftList
     {
         public ItemData[] stage_craftings; //list of items Items needed to build stage of this construction
-    }
+    }*/
 
     [CreateAssetMenu(fileName = "ConstructionData", menuName = "SurvivalEngine/ConstructionData", order = 4)]
     public class ConstructionData : CraftData
@@ -40,7 +40,7 @@ namespace SurvivalEngine
         public GroupData[] craft_stage_fillers; //Items needed to craft this (but that can be any item in group)
         public CraftData[] craft_stage_requirements; //What needs to be built before you can craft this
 
-        public StageCraftList[] stageCraftList; // contains crafts for all consctruction stages
+        public CraftData[] stage_craft_list; // contains crafts for all consctruction stages
 
         [Header("Ref Data")]
         public ItemData take_item_data; //For constructions that can be picked (trap, lure) what is the matching item
@@ -78,7 +78,7 @@ namespace SurvivalEngine
             return construction_data;
         }
 
-        public CraftStageCostData GetCraftStageCost(int stage_number)
+/*        public CraftStageCostData GetCraftStageCost(int stage_number)
         {
             CraftStageCostData cost = new CraftStageCostData();
 
@@ -108,7 +108,7 @@ namespace SurvivalEngine
                 cost.craft_near = craft_near;
 
             return cost;
-        }
+        }*/
 
 
     }

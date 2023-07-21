@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Diamond-2%
   m_EditorClassIdentifier: 
   item: {fileID: 11400000, guid: 45a58f9b378cdb644b7b6c1195d3a93c, type: 2}
-  quantity: 1
-  probability: 0.02
+  quantity: 5
+  probability: 0.5
