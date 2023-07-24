@@ -41,6 +41,7 @@ MonoBehaviour:
   stage_craft_list:
   - {fileID: 11400000, guid: 8f3d10e5e37927447818416a9f458946, type: 2}
   - {fileID: 11400000, guid: e1ed6d90aba65f84d88801d5966929d1, type: 2}
+  - {fileID: 11400000, guid: 0340f11b175cd4746a39586710b8120a, type: 2}
   take_item_data: {fileID: 11400000, guid: 8f3d10e5e37927447818416a9f458946, type: 2}
   durability_type: 0
   durability: 0

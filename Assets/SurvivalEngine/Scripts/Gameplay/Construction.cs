@@ -22,6 +22,8 @@ namespace SurvivalEngine
         [HideInInspector]
         public bool was_spawned = false; //If true, means it was crafted or loaded from save file
 
+        public UnityAction OnChangeMesh;
+
         private Selectable selectable; //Can be nulls
         private Destructible destruct; //Can be nulls
         private Buildable buildable;
@@ -29,9 +31,14 @@ namespace SurvivalEngine
 
         public int current_stage = 1;
         public int stage_count;
+        private bool is_final_stage;
+
+        [SerializeField] string construction_name;
 
         [SerializeField]
         private GameObject[] construction_models_prefab; // 1 - stage one, 2 - stage two, ...
+
+       
 
         private static List<Construction> construct_list = new List<Construction>();
 
@@ -112,7 +119,35 @@ namespace SurvivalEngine
         private void OnUse(PlayerCharacter playerCharacter)
         {
             ConstructionPanel.Get().SetConstruction(this);
-            ConstructionPanel.Get().Set(selectable, GetByUID(unique_id.unique_id));
+            ConstructionPanel.Get().SetVisible();
+        }
+
+        /// <summary>
+        /// This method change funace mesh to next.
+        /// </summary>
+        public void ChangeMeshStage()
+        {
+
+            construction_models_prefab[current_stage - 1].SetActive(false);
+            construction_models_prefab[current_stage].SetActive(true);
+            current_stage += 1;
+            if (OnChangeMesh != null)
+                OnChangeMesh.Invoke();
+        }
+
+        public string GetName()
+        {
+            return construction_name;
+        }
+
+        public bool IsFinalStage()
+        {
+            if (current_stage == stage_count)
+                is_final_stage = true;
+            else
+                is_final_stage = false;
+
+            return is_final_stage;
         }
 
         public bool IsBuilt()

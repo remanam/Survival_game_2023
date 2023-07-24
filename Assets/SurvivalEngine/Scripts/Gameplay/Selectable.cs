@@ -19,7 +19,6 @@ namespace SurvivalEngine
     /// Most objects are selectable (anything the player can click on). 
     /// Selectables can contain actions.
     /// Selectables are deactivated when too far from the camera. For game performance.
-    /// Author: Indie Marc (Marc-Antoine Desbiens)
     /// </summary>
 
     public class Selectable : MonoBehaviour
@@ -47,15 +46,19 @@ namespace SurvivalEngine
 
         public UnityAction onSelect; //When clicked with mouse, before reaching destination
         public UnityAction<PlayerCharacter> onUse; //After clicked, when character reaches use distance, or when using action button while nearby
-        public UnityAction onDestroy;
+        public UnityAction onDestroy; 
 
         private Collider[] colliders;
         private Destructible destruct; //May be null, not all selectables have one, so check if null first (quick access for optimization)
         private Character character; //May be null, not all selectables have one, so check if null first (quick access for optimization)
+        private Construction construction;
         private UniqueID unique_id; //May be null,  not all selectables have one, so check if null first
         private Transform transf; //Quick access to last position
         private bool is_hovered = false;
         private bool is_active = true;
+
+        [SerializeField]
+        private bool has_construction = false; // if True, then it sucscribe to construction
 
         private List<MonoBehaviour> scripts = new List<MonoBehaviour>();
 
@@ -71,6 +74,7 @@ namespace SurvivalEngine
             character = GetComponent<Character>();
             unique_id = GetComponent<UniqueID>();
             colliders = GetComponentsInChildren<Collider>();
+            
             selectable_list.Add(this);
             active_list.Add(this);
             transf = transform;
@@ -78,6 +82,12 @@ namespace SurvivalEngine
             scripts.AddRange(GetComponents<MonoBehaviour>());
             if (groups != null)
                 active_groups.AddRange(groups);
+            if (has_construction == true)
+            {
+                construction = GetComponent<Construction>();
+                construction.OnChangeMesh += GenerateAutomaticOutline;
+            }
+
         }
 
         void OnDestroy()
@@ -89,6 +99,7 @@ namespace SurvivalEngine
         void Start()
         {
             GenerateAutomaticOutline();
+
 
             if ((TheGame.IsMobile() || PlayerControls.IsAnyGamePad()) && groups.Length > 0 && AssetData.Get().item_merge_fx != null)
             {
@@ -113,10 +124,24 @@ namespace SurvivalEngine
         {
             //Generate automatic outline object
             if (generate_outline && outline_material != null)
-            {
+            {        
+
                 MeshRenderer[] renders = GetComponentsInChildren<MeshRenderer>();
+
+                // if it's construction, when it changes mesh, we need to create new outline for it's mesh
+                if (has_construction == true && outline.GetComponentsInChildren<MeshRenderer>().Length > 0)
+                {
+                    foreach (MeshRenderer item in outline.GetComponentsInChildren<MeshRenderer>())
+                    {
+                        Destroy(item.gameObject);
+                    }
+
+                }
+
                 foreach (MeshRenderer render in renders)
                 {
+
+
                     GameObject new_outline = Instantiate(render.gameObject, render.transform.position, render.transform.rotation);
                     new_outline.name = "OutlineMesh";
                     new_outline.transform.localScale = render.transform.lossyScale; //Preserve scale from parents

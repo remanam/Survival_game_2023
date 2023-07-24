@@ -22,7 +22,10 @@ MonoBehaviour:
   craft_duration: 0
   craft_sort_order: 0
   craft_near: {fileID: 0}
-  craft_items: []
+  craft_items:
+  - {fileID: 11400000, guid: 4cafd98656786724a868a2434d92eb95, type: 2}
+  - {fileID: 11400000, guid: 4cafd98656786724a868a2434d92eb95, type: 2}
+  - {fileID: 11400000, guid: 2b47aac4895481c479a4890be0dfd9ed, type: 2}
   craft_fillers: []
   craft_requirements: []
   craft_xp: 0

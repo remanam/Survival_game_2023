@@ -112,12 +112,15 @@ namespace SurvivalEngine
         }
 
         // can craft for consturctions stage (the same but uses construction data and STAGE of consturction)
-        public bool CanCraftStage(ConstructionData item, int current_stage, bool skip_near = false)
+        public bool CanCraftStage(Construction construction, int current_stage, bool skip_near = false)
         {
-            if (item == null)
+            if (construction.IsFinalStage() == true)
                 return false;
 
-            CraftCostData cost = item.stage_craft_list[current_stage].GetCraftCost();
+            if (construction == null)
+                return false;
+
+            CraftCostData cost = construction.data.stage_craft_list[current_stage - 1].GetCraftCost();
             bool can_craft = true;
 
             Dictionary<GroupData, int> item_groups = new Dictionary<GroupData, int>(); //Add to groups so that fillers are not same than items
@@ -181,10 +184,11 @@ namespace SurvivalEngine
             }
         }
 
-        // The same but for consturctions
-        public void PayCraftingCost(ConstructionData item, int current_stage)
+        // Use crafting for you current construction stage
+        public void PayStageCraftingCost(ConstructionData item, int current_stage)
         {
             CraftCostData cost = item.stage_craft_list[current_stage - 1].GetCraftCost();
+
             foreach (KeyValuePair<ItemData, int> pair in cost.craft_items)
             {
                 character.Inventory.UseItem(pair.Key, pair.Value);
@@ -480,12 +484,12 @@ namespace SurvivalEngine
             return null;
         }
 
-        public void BuildConstructionStage(ConstructionData construct, int current_stage, bool pay_craft_cost = true)
+        public void BuildConstructionStage(Construction construct, int current_stage, bool pay_craft_cost = true)
         {
             if (!pay_craft_cost || CanCraftStage(construct, current_stage))
             {
                 if (pay_craft_cost)
-                    PayCraftingCost(construct);
+                    PayStageCraftingCost(construct.data, current_stage);
 
                 Debug.Log("STAGE BUILD SUCCED!");
             }

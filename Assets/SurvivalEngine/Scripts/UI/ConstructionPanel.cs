@@ -18,12 +18,13 @@ namespace SurvivalEngine
         public Text desc;
         public Button craft_btn;
 
+        public Text stage_text;
+
         public ItemSlot[] craft_slots;
 
 
         private PlayerUI parent_ui;
         private Construction construction;
-        private int current_stage;
 
         private float update_timer = 0f;
 
@@ -66,9 +67,10 @@ namespace SurvivalEngine
             }
         }
 
-        public void Set(Selectable target, Construction construction)
+        public void SetVisible()
         {
             Show();
+            RefreshPanel();
         }
 
         private void SlowUpdate()
@@ -84,82 +86,105 @@ namespace SurvivalEngine
             foreach (ItemSlot slot in craft_slots)
                 slot.Hide();
 
+            title.text = construction.GetName();
 
-            foreach (ItemSlot slot in craft_slots)
-                slot.Hide();
+            
 
             PlayerCharacter player = parent_ui.GetPlayer();
-
-            CraftCostData cost = construction.data.stage_craft_list[current_stage - 1].GetCraftCost();
-            int index = 0;
-            foreach (KeyValuePair<ItemData, int> pair in cost.craft_items)
+            if (construction.IsFinalStage() == false)
             {
+                
+
+                CraftCostData cost = construction.data.stage_craft_list[construction.current_stage - 1].GetCraftCost();
+                int index = 0;
+                foreach (KeyValuePair<ItemData, int> pair in cost.craft_items)
+                {
+                    if (index < craft_slots.Length)
+                    {
+                        ItemSlot slot = craft_slots[index];
+                        slot.SetSlot(pair.Key, pair.Value, false);
+                        slot.SetFilter(player.Inventory.HasItem(pair.Key, pair.Value) ? 0 : 2);
+                        slot.ShowTitle();
+                    }
+                    index++;
+                }
+
+                foreach (KeyValuePair<GroupData, int> pair in cost.craft_fillers)
+                {
+                    if (index < craft_slots.Length)
+                    {
+                        ItemSlot slot = craft_slots[index];
+                        slot.SetSlotCustom(pair.Key.icon, pair.Key.title, pair.Value, false);
+                        slot.SetFilter(player.Inventory.HasItemInGroup(pair.Key, pair.Value) ? 0 : 2);
+                        slot.ShowTitle();
+                    }
+                    index++;
+                }
+
+                foreach (KeyValuePair<CraftData, int> pair in cost.craft_requirements)
+                {
+                    if (index < craft_slots.Length)
+                    {
+                        ItemSlot slot = craft_slots[index];
+                        slot.SetSlot(pair.Key, pair.Value, false);
+                        slot.SetFilter(player.Crafting.CountRequirements(pair.Key) >= pair.Value ? 0 : 2);
+                        slot.ShowTitle();
+                    }
+                    index++;
+                }
+
                 if (index < craft_slots.Length)
                 {
                     ItemSlot slot = craft_slots[index];
-                    slot.SetSlot(pair.Key, pair.Value, false);
-                    slot.SetFilter(player.Inventory.HasItem(pair.Key, pair.Value) ? 0 : 2);
-                    slot.ShowTitle();
-                }
-                index++;
-            }
-
-            foreach (KeyValuePair<GroupData, int> pair in cost.craft_fillers)
-            {
-                if (index < craft_slots.Length)
-                {
-                    ItemSlot slot = craft_slots[index];
-                    slot.SetSlotCustom(pair.Key.icon, pair.Key.title, pair.Value, false);
-                    slot.SetFilter(player.Inventory.HasItemInGroup(pair.Key, pair.Value) ? 0 : 2);
-                    slot.ShowTitle();
-                }
-                index++;
-            }
-
-            foreach (KeyValuePair<CraftData, int> pair in cost.craft_requirements)
-            {
-                if (index < craft_slots.Length)
-                {
-                    ItemSlot slot = craft_slots[index];
-                    slot.SetSlot(pair.Key, pair.Value, false);
-                    slot.SetFilter(player.Crafting.CountRequirements(pair.Key) >= pair.Value ? 0 : 2);
-                    slot.ShowTitle();
-                }
-                index++;
-            }
-
-            if (index < craft_slots.Length)
-            {
-                ItemSlot slot = craft_slots[index];
-                if (cost.craft_near != null)
-                {
-                    slot.SetSlotCustom(cost.craft_near.icon, cost.craft_near.title, 1, false);
-                    bool isnear = player.IsNearGroup(cost.craft_near) || player.EquipData.HasItemInGroup(cost.craft_near);
-                    slot.SetFilter(isnear ? 0 : 2);
-                    slot.ShowTitle();
+                    if (cost.craft_near != null)
+                    {
+                        slot.SetSlotCustom(cost.craft_near.icon, cost.craft_near.title, 1, false);
+                        bool isnear = player.IsNearGroup(cost.craft_near) || player.EquipData.HasItemInGroup(cost.craft_near);
+                        slot.SetFilter(isnear ? 0 : 2);
+                        slot.ShowTitle();
+                    }
                 }
             }
 
-            craft_btn.interactable = player.Crafting.CanCraftStage(construction.data, current_stage);
+            craft_btn.interactable = player.Crafting.CanCraftStage(construction, construction.current_stage);
+
+            if (construction.IsFinalStage() == true)
+                craft_btn.gameObject.SetActive(false);
         }
 
         public void OnClickCraft()
         {
             PlayerCharacter player = parent_ui.GetPlayer();
 
-            if (player.Crafting.CanCraftStage(construction.data, construction.current_stage))
+            if (player.Crafting.CanCraftStage(construction, construction.current_stage) && construction.current_stage < construction.stage_count)
             {
-                player.Crafting.BuildConstructionStage(construction.data, construction.current_stage);
+                player.Crafting.BuildConstructionStage(construction, construction.current_stage);
+                construction.ChangeMeshStage();
+
+                RefreshPanel();
+
+                Hide();
 
                 craft_btn.interactable = false;
-                this.construction = null;
-                Hide();
+/*                if (construction.current_stage == construction.stage_count)
+                {
+                    craft_btn.enabled = false;
+                }*/
+
+                construction = null;
+
+
             }
         }
         public void SetConstruction(Construction construction)
         {
             this.construction = construction;
-            this.current_stage = construction.current_stage;
+            name = construction.GetName();
+            if (construction.IsFinalStage() == false)
+                stage_text.text = "stage " + construction.current_stage.ToString() + "/" + (construction.stage_count - 1).ToString();
+            else
+                stage_text.text = "";
+
         }
 
         public void CancelSelection()
